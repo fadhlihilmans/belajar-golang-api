@@ -1,18 +1,34 @@
 package controllers
 
 import (
-	"belajar-golang-api/helpers"
 	"belajar-golang-api/models"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type ValidateCategoryInput struct {
-	Name string `json:"name" binding:"required"`
+	Name   string `json:"name" binding:"required"`
 }
 
+// type ErrorMsg struct {
+// 	Field   string `json:"field"`
+// 	Message string `json:"message"`
+// }
+
+
+// func GetErrorMsg(fe validator.FieldError) string {
+// 	switch fe.Tag() {
+// 	case "required":
+// 		return "This field is required"
+// 	}
+// 	return "Unknown error"
+// }
+
 func FindCategories(c *gin.Context) {
+
 	var categories []models.Category
 	models.DB.Select("id", "name").Find(&categories)
 
@@ -26,17 +42,19 @@ func FindCategories(c *gin.Context) {
 func StoreCategory(c *gin.Context) {
 	var input ValidateCategoryInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		errors := helpers.FormatValidationError(err)
-		if errors != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make([]ErrorMsg, len(ve))
+			for i, fe := range ve {
+				out[i] = ErrorMsg{fe.Field(), GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": out})
 		}
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	category := models.Category{
-		Name: input.Name,
+		Name:   input.Name,
 	}
 	models.DB.Create(&category)
 
@@ -70,12 +88,14 @@ func UpdateCategory(c *gin.Context) {
 
 	var input ValidateCategoryInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		errors := helpers.FormatValidationError(err)
-		if errors != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make([]ErrorMsg, len(ve))
+			for i, fe := range ve {
+				out[i] = ErrorMsg{fe.Field(), GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": out})
 		}
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"belajar-golang-api/helpers"
 	"belajar-golang-api/models"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type ValidatePostInput struct {
@@ -13,7 +14,21 @@ type ValidatePostInput struct {
 	Content string `json:"content" binding:"required"`
 }
 
+type ErrorMsg struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+func GetErrorMsg(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	}
+	return "Unknown error"
+}
+
 func FindPosts(c *gin.Context) {
+
 	var posts []models.Post
 	models.DB.Select("id", "title", "content").Find(&posts)
 
@@ -27,12 +42,14 @@ func FindPosts(c *gin.Context) {
 func StorePost(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		errors := helpers.FormatValidationError(err)
-		if errors != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make([]ErrorMsg, len(ve))
+			for i, fe := range ve {
+				out[i] = ErrorMsg{fe.Field(), GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": out})
 		}
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -72,12 +89,14 @@ func UpdatePost(c *gin.Context) {
 
 	var input ValidatePostInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		errors := helpers.FormatValidationError(err)
-		if errors != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": errors})
-			return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			out := make([]ErrorMsg, len(ve))
+			for i, fe := range ve {
+				out[i] = ErrorMsg{fe.Field(), GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": out})
 		}
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
