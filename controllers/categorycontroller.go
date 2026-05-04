@@ -95,6 +95,22 @@ func DeleteCategory(c *gin.Context) {
 		return
 	}
 
+	// if err := models.DB.Delete(&category).Error; err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{
+	// 		"success": false, 
+	// 		"message": "Cannot delete category: it is still used by some posts",
+	// 	})
+	// 	return
+	// }
+	if err := models.DB.Delete(&category).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+					"success": false, 
+					"message": "Gagal menghapus data",
+					"debug_error": err.Error(), 
+			})
+			return
+	}
+
 	models.DB.Delete(&category)
 
 	c.JSON(200, gin.H{

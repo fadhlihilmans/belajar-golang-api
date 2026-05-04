@@ -1,0 +1,31 @@
+package models
+
+import (
+	"fmt"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+var DB *gorm.DB
+
+func ConnectDatabase() {
+	host := "localhost"
+	user := "postgres"
+	password := ""
+	dbName := "db_go_api"
+	port := 5432
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Jakarta", 
+		host, user, password, dbName, port)
+
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	
+	if err != nil {
+		panic("failed to connect to PostgreSQL database")
+	}
+
+	database.AutoMigrate(&Category{}, &Post{})
+
+	DB = database
+}
