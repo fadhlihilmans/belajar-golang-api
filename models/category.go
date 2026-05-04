@@ -1,11 +1,8 @@
 package models
 
-type Post struct {
-	Id         int      `json:"id" gorm:"primary_key"`
-	Title      string   `json:"title"`
-	Content    string   `json:"content"`
-	CategoryID uint     `json:"category_id"`
-	Category   Category `json:"category"`
+type Category struct {
+	Id   int    `json:"id" gorm:"primary_key"`
+	Name string `gorm:"type:varchar(100)" json:"name"`
 }
 
 // func (Category) TableName() string {
